@@ -16,7 +16,7 @@ SRC_URI:append:sunxi = " \
     file://0002-Added-nanopi-r1-board-support.patch \
     file://0003-sunxi-H6-Enable-Ethernet-on-Orange-Pi-One-Plus.patch \
     file://0004-OrangePi-3-LTS-support.patch \
-    file://boot.cmd \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'grub-efi', 'file://boot-grub-efi.cmd', 'file://boot.cmd', d)} \
 "
 SRC_URI:append:sun9i = " \
     file://0001-sunxi-board-Fix-early-PMIC-setup-conditions.patch \
@@ -33,6 +33,13 @@ EXTRA_OEMAKE:append:sunxi = ' HOSTLDSHARED="${BUILD_CC} -shared ${BUILD_LDFLAGS}
 EXTRA_OEMAKE:append:sun50i = " BL31=${DEPLOY_DIR_IMAGE}/bl31.bin SCP=/dev/null"
 
 do_compile:sun50i[depends] += "trusted-firmware-a:do_deploy"
+
+do_configure:append:sunxi() {
+  if test -f ${WORKDIR}/boot-grub-efi.cmd
+    then
+    cp ${WORKDIR}/boot-grub-efi.cmd ${WORKDIR}/boot.cmd
+  fi
+}
 
 do_compile:append:sunxi() {
     ${B}/tools/mkimage -C none -A arm -T script -d ${WORKDIR}/boot.cmd ${WORKDIR}/${UBOOT_ENV_BINARY}
